@@ -10,8 +10,8 @@ import qualified Control.Monad.State as State
 import Data.IORef
 
 data E a where
-  Var :: Int -> E a
-  Val :: a -> E a
+  Var :: Int -> E a  -- Not part of syntax; only for reification
+  Val :: a -> E a    -- Not part of syntax; only for reification
   NUM :: (Num a, Show a) => a -> E a
   Add :: Num a => E a -> E a -> E a
 
@@ -34,7 +34,7 @@ type R a = IORef a
 
 data S a where
   Ret  :: E a -> S a
-  Bind :: S a -> (E a -> S b) -> S b
+  Bind :: S a -> (E a -> S b) -> S b  -- Higher-order abstract syntax
   New  :: E a -> S (R a)
   Get  :: E (R a) -> S a
   Set  :: E (R a) -> E a -> S ()
