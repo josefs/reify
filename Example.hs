@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE Rank2Types #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
@@ -74,9 +75,31 @@ compileS = flip State.evalState 0 . go
 
 data M a = M { unM :: (forall b. (a -> S b) -> S b) }
 
+-- Note, `a` can be any type, but the only result we can get from `M a` is an expression.
+
 instance Monad M where
   return a = M (\k -> k a)
   M f >>= g = M (\k -> f (\a -> unM (g a) k))
+
+ex1 = do
+    a <- return 1
+    b <- return 2
+    return (a+b)
+
+ex1' =
+    return 1 >>= \a ->
+    return 2 >>= \b ->
+    return (a+b)
+
+ex1'' = M
+    (\k -> (\k -> k 1) (\aa -> (\a ->
+    (\k -> (\k -> k 2) (\ab -> (\b ->
+    (\k -> k (a+b))) ab k))) aa k))
+
+ex1''' = M (\k -> k (1+2))  --  == return (1+2)
+
+runM :: M (E a) -> S a
+runM (M f) = f Ret
 
 new :: E a -> M (E (R a))
 new a = M (\k -> Bind (New a) k)
@@ -86,9 +109,6 @@ get r = M (\k -> Bind (Get r) k)
 
 set :: E (R a) -> E a -> M (E ())
 set r a = M (\k -> Bind (Set r a) k)
-
-runM :: M (E a) -> S a
-runM (M f) = f Ret
 
 eval :: M (E a) -> IO a
 eval = evalS . runM
