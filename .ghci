@@ -1,0 +1,6 @@
+:set -XFlexibleInstances
+:set -XGADTs
+:set -XNoMonomorphismRestriction
+:set -XRank2Types
+
+:set -fno-warn-missing-methods

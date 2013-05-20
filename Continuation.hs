@@ -1,18 +1,17 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE Rank2Types #-}
-
-{-# OPTIONS_GHC -fno-warn-missing-methods #-}
-
-module Example where
+module Continuation where
 
 import qualified Control.Monad.State as State
 import Data.IORef
 
+
+
+----------------------------------------------------------------------------------------------------
+-- Arithmetic expressions
+----------------------------------------------------------------------------------------------------
+
 data E a where
-  Var :: Int -> E a  -- Not part of syntax; only for reification
-  Val :: a -> E a    -- Not part of syntax; only for reification
+  Var :: Int -> E a  -- Variable; syntactic interpretation
+  Val :: a -> E a    -- Variable; semantic
   NUM :: (Num a, Show a) => a -> E a
   Add :: Num a => E a -> E a -> E a
 
@@ -30,6 +29,12 @@ compileE (Add a b) = "(" ++ compileE a ++ " + " ++ compileE b ++ ")"
 instance (Num a, Show a) => Num (E a) where
   fromInteger = NUM . fromInteger
   (+) = Add
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Adding references and monadic combinators
+----------------------------------------------------------------------------------------------------
 
 type R a = IORef a
 
@@ -63,15 +68,19 @@ compileS = flip State.evalState 0 . go
     go (Get a)    = return $ unwords ["get", compileE a]
     go (Set r a)  = return $ unwords ["set", compileE r, compileE a]
 
-
-
--- Solution 1
-
--- Monad instance does not type check
+-- Monad instance does not type check :(
 --instance Monad S
 --  where
 --    return = Ret
 --    (>>=)  = Bind
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Feldspar solution
+----------------------------------------------------------------------------------------------------
+
+-- Persson, Axelsson, Svenningsson. Generic Monadic Constructs for Embedded Languages. IFL 2012.
 
 data M a = M { unM :: (forall b. (a -> S b) -> S b) }
 
@@ -98,27 +107,35 @@ ex1'' = M
 
 ex1''' = M (\k -> k (1+2))  --  == return (1+2)
 
-runM :: M (E a) -> S a
-runM (M f) = f Ret
+lower :: M (E a) -> S a
+lower (M f) = f Ret
+
+lift :: S a -> M (E a)
+lift s = M (\k -> Bind s k)
+
+-- Note: `Bind` only introduced by `lower`
+--       `Ret`  only introduced by `lift`
 
 new :: E a -> M (E (R a))
-new a = M (\k -> Bind (New a) k)
+new a = lift (New a)
 
 get :: E (R a) -> M (E a)
-get r = M (\k -> Bind (Get r) k)
+get r = lift (Get r)
 
 set :: E (R a) -> E a -> M (E ())
-set r a = M (\k -> Bind (Set r a) k)
+set r a = lift (Set r a)
 
 eval :: M (E a) -> IO a
-eval = evalS . runM
+eval = evalS . lower
 
 compile :: M (E a) -> String
-compile = compileS . runM
+compile = compileS . lower
 
 
 
+----------------------------------------------------------------------------------------------------
 -- Examples
+----------------------------------------------------------------------------------------------------
 
 prog1 :: M (E Int)
 prog1 = do
@@ -141,6 +158,7 @@ prog2 = do
     get b
 
 test1 = putStrLn $ compile prog1
-test2 = eval prog1
-test3 = putStrLn $ compile prog2
+test2 = putStrLn $ compile prog2
+test3 = eval prog1
 test4 = eval prog2
+
