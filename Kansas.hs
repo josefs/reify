@@ -46,7 +46,7 @@ lift :: S a -> M (E a)
 lift s = BIND s RET
 
 -- * `Ret` and `Bind` only introduced by `lower`
--- * All occurrences of `Bind` in lower have the same result type
+-- * All occurrences of `Bind` in `lower` have the same result type
 -- * I.e. can also support monads where result of bind is constrained (e.g. `Set` monad)
 
 new :: E a -> M (E (R a))

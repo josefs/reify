@@ -82,12 +82,14 @@ compileS = flip State.evalState 0 . go
 
 -- Persson, Axelsson, Svenningsson. Generic Monadic Constructs for Embedded Languages. IFL 2012.
 
+-- First published solution to the monad reification problem
+
 data M a = M { unM :: (forall b. (a -> S b) -> S b) }
 
 -- Note, `a` can be any type, but the only result we can get from `M a` is an expression.
 
 instance Monad M where
-  return a = M (\k -> k a)
+  return a  = M (\k -> k a)
   M f >>= g = M (\k -> f (\a -> unM (g a) k))
 
 ex1 = do
