@@ -1,6 +1,6 @@
 module Kansas where
 
-import Continuation
+import Example
   ( E (..)
   , evalE
   , compileE
@@ -94,4 +94,6 @@ test1 = putStrLn $ compile prog1
 test2 = putStrLn $ compile prog2
 test3 = eval prog1
 test4 = eval prog2
+
+-- `test1` and `test2` give the same result (normalization)
 
