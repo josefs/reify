@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module Example where
 
 import qualified Control.Monad.State as State
