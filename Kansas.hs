@@ -12,11 +12,12 @@ import Example
 
 
 
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 -- "Kansas" solution
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
--- Sculthorpe, Bracker, Giorgidze, Gill. The Constrained-Monad Problem. Submitted to ICFP 2013.
+-- Sculthorpe, Bracker, Giorgidze, Gill. The Constrained-Monad Problem.
+-- Submitted to ICFP 2013.
 
 -- Normal form of constrained monadic expressions
 data M a where
@@ -38,12 +39,12 @@ instance Monad M where
 --
 -- This way we can implement other constrained monads.
 
-lower :: M (E a) -> S a
-lower (RET a)    = Ret a
-lower (BIND s k) = Bind s (lower . k)
-
 lift :: S a -> M (E a)
 lift s = BIND s RET
+
+lower :: M (E a) -> S a
+lower (RET a)    = Ret a
+lower (BIND s k) = Bind s (\a -> lower (k a))
 
 -- * `Ret` and `Bind` only introduced by `lower`
 -- * All occurrences of `Bind` in `lower` have the same result type
@@ -57,8 +58,6 @@ get r = lift (Get r)
 
 set :: E (R a) -> E a -> M (E ())
 set r a = lift (Set r a)
-
-
 
 eval :: M (E a) -> IO a
 eval = evalS . lower

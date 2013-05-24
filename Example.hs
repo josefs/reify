@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+
 module Example where
 
 import qualified Control.Monad.State as State
@@ -6,9 +7,9 @@ import Data.IORef
 
 
 
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 -- Arithmetic expressions
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 data E a where
   Var :: Int -> E a  -- Variable; syntactic interpretation
@@ -32,11 +33,16 @@ instance (Num a, Show a) => Num (E a) where
   fromInteger = NUM . fromInteger
   (+) = Add
 
+progE = 1+2+3 :: E Int
+
+testE1 = evalE progE
+testE2 = compileE progE
 
 
-----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------
 -- Adding references and monadic combinators
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 type R a = IORef a
 
@@ -49,7 +55,7 @@ data S a where
 
 evalS :: S a -> IO a
 evalS (Ret a)    = return (evalE a)
-evalS (Bind a f) = evalS a >>= \a' -> evalS (f (Val a'))
+evalS (Bind a k) = evalS a >>= \a' -> evalS (k (Val a'))
 evalS (New a)    = newIORef (evalE a)
 evalS (Get r)    = readIORef (evalE r)
 evalS (Set r a)  = writeIORef (evalE r) (evalE a)

@@ -4,21 +4,23 @@ import Example
 
 
 
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 -- Feldspar solution
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
--- Persson, Axelsson, Svenningsson. Generic Monadic Constructs for Embedded Languages. IFL 2012.
+-- Persson, Axelsson, Svenningsson. Generic Monadic Constructs for Embedded
+-- Languages. IFL 2012.
 
 -- First published solution to the monad reification problem
 
 data M a = M { unM :: (forall b. (a -> S b) -> S b) }
 
--- Note, `a` can be any type, but the only result we can get from `M a` is an expression.
+-- Note, `a` can be any type, but the only result we can get from
+-- `M a` is an expression.
 
 instance Monad M where
-  return a  = M (\k -> k a)
-  M f >>= g = M (\k -> f (\a -> unM (g a) k))
+  return a  = M $ \k -> k a
+  M f >>= h = M $ \k -> f (\a -> unM (h a) k)
 
 -- Continuation example
 ex1 = do
@@ -38,14 +40,14 @@ ex1'' = M
 
 ex1''' = M (\k -> k (1+2))  --  == return (1+2)
 
+lift :: S a -> M (E a)
+lift s = M $ \k -> Bind s k
+
 lower :: M (E a) -> S a
 lower (M f) = f Ret
 
-lift :: S a -> M (E a)
-lift s = M (\k -> Bind s k)
-
--- Note: `Bind` only introduced by `lower`
---       `Ret`  only introduced by `lift`
+-- Note: `Ret`  only introduced by `lift`
+--       `Bind` only introduced by `lower`
 
 new :: E a -> M (E (R a))
 new a = lift (New a)
@@ -64,9 +66,9 @@ compile = compileS . lower
 
 
 
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 -- Examples
-----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 prog1 :: M (E Int)
 prog1 = do
