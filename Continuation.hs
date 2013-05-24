@@ -46,8 +46,8 @@ lift s = M $ \k -> Bind s k
 lower :: M (E a) -> S a
 lower (M f) = f Ret
 
--- Note: `Ret`  only introduced by `lift`
---       `Bind` only introduced by `lower`
+-- Note: `Ret`  only introduced by `lower`
+--       `Bind` only introduced by `lift`
 
 new :: E a -> M (E (R a))
 new a = lift (New a)
